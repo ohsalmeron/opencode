@@ -1,25 +1,46 @@
-import { createEffect, Suspense, type ParentProps } from "solid-js"
+import { createEffect, createMemo, Suspense, type ParentProps } from "solid-js"
 import { useNavigate, useParams } from "@solidjs/router"
 import { DebugBar } from "@/components/debug-bar"
 import { HelpButton } from "@/components/help-button"
 import { Titlebar, type TitlebarUpdate } from "@/components/titlebar"
 import { useCommand } from "@/context/command"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
+import { useGlobal } from "@/context/global"
 import { useLanguage } from "@/context/language"
+import { useLayout } from "@/context/layout"
 import { useNotification } from "@/context/notification"
+import { PermissionProvider } from "@/context/permission"
 import { usePlatform } from "@/context/platform"
+import { ServerConnection } from "@/context/server"
+import { ServerSDKProvider } from "@/context/server-sdk"
+import { ServerSyncProvider } from "@/context/server-sync"
 import { setNavigate } from "@/utils/notification-click"
 import { setV2Toast, ToastRegion } from "@/utils/toast"
 
 export default function NewLayout(props: ParentProps) {
   const command = useCommand()
   const dialog = useDialog()
+  const global = useGlobal()
   const language = useLanguage()
+  const layout = useLayout()
   const platform = usePlatform()
   const notification = useNotification()
   const navigate = useNavigate()
   const params = useParams<{ id?: string }>()
   setNavigate(navigate)
+
+  const settingsServer = createMemo(() => {
+    const route = layout.route()
+    if (route.type === "home") return undefined
+    const key = route.server
+    if (!key) return undefined
+    return global.servers.list().find((item) => ServerConnection.key(item) === key)
+  })
+  const settingsSessionID = createMemo(() => {
+    const route = layout.route()
+    if (route.type !== "session") return undefined
+    return route.sessionId
+  })
 
   createEffect(() => setV2Toast(true))
   createEffect(() => {
@@ -36,7 +57,15 @@ export default function NewLayout(props: ParentProps) {
       keybind: "mod+comma",
       onSelect: () => {
         void import("@/components/settings-v2").then((x) => {
-          dialog.show(() => <x.DialogSettings />)
+          void dialog.show(() => (
+            <ServerSDKProvider server={settingsServer}>
+              <ServerSyncProvider server={settingsServer}>
+                <PermissionProvider>
+                  <x.DialogSettings sessionID={settingsSessionID()} />
+                </PermissionProvider>
+              </ServerSyncProvider>
+            </ServerSDKProvider>
+          ))
         })
       },
     },
