@@ -408,6 +408,15 @@ export function SessionSidePanel(props: {
                       <Tabs.Trigger value="all" class="flex-1" classes={{ button: "w-full" }}>
                         {language.t("session.files.all")}
                       </Tabs.Trigger>
+                      <TooltipKeybind placement="bottom" title="Refresh file tree" keybind="">
+                        <IconButton
+                          icon="reset"
+                          variant="ghost"
+                          class="size-6 rounded-md shrink-0 ml-1"
+                          aria-label="Refresh file tree"
+                          onClick={() => file.tree.refresh("")}
+                        />
+                      </TooltipKeybind>
                     </Tabs.List>
                     <Tabs.Content value="changes" class="bg-background-stronger px-3 py-0">
                       <Switch>

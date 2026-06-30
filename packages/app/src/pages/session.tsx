@@ -1480,7 +1480,25 @@ export default function Page() {
       .map((item) => ({ id: item.id, text: line(item.id) }))
   })
 
-  const actions = { revert }
+  const fork = (input: { sessionID: string; messageID: string }) => {
+    if (reverting()) return
+    sdk()
+      .client.session.fork({ sessionID: input.sessionID, messageID: input.messageID })
+      .then((forked) => {
+        if (!forked.data) {
+          showToast({ title: language.t("common.requestFailed") })
+          return
+        }
+        const dir = base64Encode(sdk().directory)
+        navigate(`/${dir}/session/${forked.data.id}`)
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : String(err)
+        showToast({ title: language.t("common.requestFailed"), description: message })
+      })
+  }
+
+  const actions = { revert, fork }
 
   createEffect(() => {
     const sessionID = params.id

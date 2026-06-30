@@ -1,16 +1,31 @@
 import type { Session } from "@opencode-ai/sdk/v2/client"
 import { Avatar } from "@opencode-ai/ui/avatar"
+import { ContextMenu } from "@opencode-ai/ui/context-menu"
 import { Icon } from "@opencode-ai/ui/icon"
 import { Icon as IconV2 } from "@opencode-ai/ui/v2/icon"
 import { IconButton } from "@opencode-ai/ui/icon-button"
 import { Spinner } from "@opencode-ai/ui/spinner"
 import { Tooltip } from "@opencode-ai/ui/tooltip"
 import { getFilename } from "@opencode-ai/core/util/path"
-import { A, useParams } from "@solidjs/router"
+import { A, useParams, useNavigate } from "@solidjs/router"
+import { useServerSDK } from "@/context/server-sdk"
+import { base64Encode } from "@opencode-ai/core/util/encode"
 import { type Accessor, createMemo, For, type JSX, Match, Show, Switch } from "solid-js"
+import { Dynamic } from "solid-js/web"
 import { useServerSync } from "@/context/server-sync"
 import { useLanguage } from "@/context/language"
 import { getAvatarColors, type LocalProject, useLayout } from "@/context/layout"
+type InlineEditorComponent = (props: {
+  id: string
+  value: Accessor<string>
+  onSave: (next: string) => void
+  class?: string
+  displayClass?: string
+  editing?: boolean
+  stopPropagation?: boolean
+  openOnDblClick?: boolean
+}) => JSX.Element
+
 import { useNotification } from "@/context/notification"
 import { usePermission } from "@/context/permission"
 import { messageAgentColor } from "@/utils/agent"
@@ -87,6 +102,11 @@ export type SessionItemProps = {
   clearHoverProjectSoon: () => void
   prefetchSession: (session: Session, priority?: "high" | "low") => void
   archiveSession: (session: Session) => Promise<void>
+  renameSession?: (sessionID: string, title: string) => void
+  deleteSession?: (session: Session) => void
+  InlineEditor?: InlineEditorComponent
+  editorOpen?: (id: string) => boolean
+  openEditor?: (id: string, value: string) => void
 }
 
 const SessionRow = (props: {
@@ -103,8 +123,10 @@ const SessionRow = (props: {
   sidebarOpened: Accessor<boolean>
   warmPress: () => void
   warmFocus: () => void
+  InlineEditor?: InlineEditorComponent
+  renameSession?: (sessionID: string, title: string) => void
 }): JSX.Element => {
-  const title = () => sessionTitle(props.session.title)
+  const title = () => sessionTitle(props.session.title) ?? ""
 
   return (
     <A
@@ -138,7 +160,21 @@ const SessionRow = (props: {
           </Switch>
         </div>
       </Show>
-      <span class="text-14-regular text-text-strong min-w-0 flex-1 truncate">{title()}</span>
+      <Show
+        when={props.InlineEditor && props.renameSession}
+        fallback={
+          <span class="text-14-regular text-text-strong min-w-0 flex-1 truncate">{title()}</span>
+        }
+      >
+        <Dynamic
+          component={props.InlineEditor}
+          id={`session:${props.session.id}`}
+          value={title}
+          onSave={(next: string) => props.renameSession!(props.session.id, next)}
+          displayClass="text-14-regular text-text-strong min-w-0 flex-1 truncate"
+          stopPropagation
+        />
+      </Show>
     </A>
   )
 }
@@ -197,6 +233,20 @@ export const SessionItem = (props: SessionItemProps): JSX.Element => {
     }
   }
 
+  const navigate = useNavigate()
+  const serverSDK = useServerSDK()
+  const forkSession = (event: MouseEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    serverSDK()
+      .client.session.fork({ sessionID: props.session.id })
+      .then((forked) => {
+        if (!forked.data) return
+        const dir = base64Encode(props.session.directory)
+        navigate(`/${dir}/session/${forked.data.id}`)
+      })
+  }
+
   const item = (
     <SessionRow
       session={props.session}
@@ -212,62 +262,130 @@ export const SessionItem = (props: SessionItemProps): JSX.Element => {
       sidebarOpened={layout.sidebar.opened}
       warmPress={() => warm(2, "high")}
       warmFocus={() => warm(2, "high")}
+      InlineEditor={props.InlineEditor}
+      renameSession={props.renameSession}
     />
+  )
+
+  const hasContextMenu = () =>
+    !props.level && !!props.InlineEditor && !!props.renameSession && !!props.deleteSession
+
+  const outerClass =
+    "group/session relative w-full min-w-0 rounded-md cursor-default pr-3 transition-colors hover:bg-surface-raised-base-hover [&:has(:focus-visible)]:bg-surface-raised-base-hover has-[[data-expanded]]:bg-surface-raised-base-hover has-[.active]:bg-surface-base-active"
+  const outerStyle = () => ({ "padding-left": `${8 + (props.level ?? 0) * 16}px` })
+
+  const innerContent = (
+    <div class="flex min-w-0 items-center gap-1">
+      <div class="min-w-0 flex-1">
+        <Show
+          when={!tooltip()}
+          fallback={
+            <Tooltip
+              placement={props.mobile ? "bottom" : "right"}
+              value={sessionTitle(props.session.title)}
+              gutter={10}
+              class="min-w-0 w-full"
+            >
+              {item}
+            </Tooltip>
+          }
+        >
+          {item}
+        </Show>
+      </div>
+
+      <Show when={!props.level}>
+        <div
+          class="shrink-0 overflow-hidden transition-[width,opacity] flex items-center gap-1"
+          classList={{
+            "w-[52px] opacity-100 pointer-events-auto": !!props.mobile,
+            "w-0 opacity-0 pointer-events-none": !props.mobile,
+            "group-hover/session:w-[52px] group-hover/session:opacity-100 group-hover/session:pointer-events-auto": true,
+            "group-focus-within/session:w-[52px] group-focus-within/session:opacity-100 group-focus-within/session:pointer-events-auto": true,
+          }}
+        >
+          <Tooltip value="Fork" placement="top">
+            <IconButton
+              icon="fork"
+              variant="ghost"
+              class="size-6 rounded-md"
+              aria-label="Fork"
+              onClick={forkSession}
+            />
+          </Tooltip>
+          <Tooltip value={language.t("common.archive")} placement="top">
+            <IconButton
+              icon="archive"
+              variant="ghost"
+              class="size-6 rounded-md"
+              aria-label={language.t("common.archive")}
+              onClick={(event) => {
+                event.preventDefault()
+                event.stopPropagation()
+                void props.archiveSession(props.session)
+              }}
+            />
+          </Tooltip>
+        </div>
+      </Show>
+    </div>
   )
 
   return (
     <>
-      <div
-        data-session-id={props.session.id}
-        class="group/session relative w-full min-w-0 rounded-md cursor-default pr-3 transition-colors hover:bg-surface-raised-base-hover [&:has(:focus-visible)]:bg-surface-raised-base-hover has-[[data-expanded]]:bg-surface-raised-base-hover has-[.active]:bg-surface-base-active"
-        style={{ "padding-left": `${8 + (props.level ?? 0) * 16}px` }}
-      >
-        <div class="flex min-w-0 items-center gap-1">
-          <div class="min-w-0 flex-1">
-            <Show
-              when={!tooltip()}
-              fallback={
-                <Tooltip
-                  placement={props.mobile ? "bottom" : "right"}
-                  value={sessionTitle(props.session.title)}
-                  gutter={10}
-                  class="min-w-0 w-full"
-                >
-                  {item}
-                </Tooltip>
-              }
-            >
-              {item}
-            </Show>
+      <Show
+        when={hasContextMenu()}
+        fallback={
+          <div data-session-id={props.session.id} class={outerClass} style={outerStyle()}>
+            {innerContent}
           </div>
-
-          <Show when={!props.level}>
-            <div
-              class="shrink-0 overflow-hidden transition-[width,opacity]"
-              classList={{
-                "w-6 opacity-100 pointer-events-auto": !!props.mobile,
-                "w-0 opacity-0 pointer-events-none": !props.mobile,
-                "group-hover/session:w-6 group-hover/session:opacity-100 group-hover/session:pointer-events-auto": true,
-                "group-focus-within/session:w-6 group-focus-within/session:opacity-100 group-focus-within/session:pointer-events-auto": true,
-              }}
-            >
-              <Tooltip value={language.t("common.archive")} placement="top">
-                <IconButton
-                  icon="archive"
-                  variant="ghost"
-                  class="size-6 rounded-md"
-                  aria-label={language.t("common.archive")}
-                  onClick={(event) => {
-                    event.preventDefault()
-                    event.stopPropagation()
-                    void props.archiveSession(props.session)
-                  }}
-                />
-              </Tooltip>
-            </div>
-          </Show>
-        </div>
-      </div>
+        }
+      >
+        <ContextMenu>
+          <ContextMenu.Trigger
+            as="div"
+            data-session-id={props.session.id}
+            class={outerClass}
+            style={outerStyle()}
+          >
+            {innerContent}
+          </ContextMenu.Trigger>
+          <ContextMenu.Portal>
+            <ContextMenu.Content>
+              <ContextMenu.Item
+                onSelect={() =>
+                  props.openEditor!(`session:${props.session.id}`, sessionTitle(props.session.title) ?? "")
+                }
+              >
+                <ContextMenu.ItemLabel>{language.t("common.rename")}</ContextMenu.ItemLabel>
+              </ContextMenu.Item>
+              <ContextMenu.Item
+                onSelect={() => {
+                  serverSDK()
+                    .client.session.fork({ sessionID: props.session.id })
+                    .then((forked) => {
+                      if (!forked.data) return
+                      navigate(`/${base64Encode(props.session.directory)}/session/${forked.data.id}`)
+                    })
+                }}
+              >
+                <ContextMenu.ItemLabel>Fork</ContextMenu.ItemLabel>
+              </ContextMenu.Item>
+              <ContextMenu.Item
+                onSelect={() => {
+                  void props.archiveSession(props.session)
+                }}
+              >
+                <ContextMenu.ItemLabel>{language.t("common.archive")}</ContextMenu.ItemLabel>
+              </ContextMenu.Item>
+              <ContextMenu.Separator />
+              <ContextMenu.Item onSelect={() => props.deleteSession!(props.session)}>
+                <ContextMenu.ItemLabel>{language.t("common.delete")}</ContextMenu.ItemLabel>
+              </ContextMenu.Item>
+            </ContextMenu.Content>
+          </ContextMenu.Portal>
+        </ContextMenu>
+      </Show>
       <Show when={currentChild()} keyed>
         {(child) => (
           <div class="w-full">

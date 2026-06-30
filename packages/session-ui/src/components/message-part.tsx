@@ -182,6 +182,7 @@ export interface MessagePartProps {
   onContentRendered?: () => void
   showAssistantCopyPartID?: string | null
   turnDurationMs?: number
+  actions?: UserActions
 }
 
 export type PartComponent = Component<MessagePartProps>
@@ -1566,6 +1567,27 @@ PART_MAPPING["text"] = function TextPartDisplay(props) {
         </div>
         <Show when={showCopy()}>
           <div data-slot="text-part-copy-wrapper" data-interrupted={interrupted() ? "" : undefined}>
+            <Show when={props.actions?.fork}>
+              <Tooltip
+                value="Fork from this response"
+                placement="top"
+                gutter={4}
+              >
+                <IconButton
+                  icon="fork"
+                  size="normal"
+                  variant="ghost"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    void props.actions!.fork!({
+                      sessionID: props.message.sessionID,
+                      messageID: props.message.id,
+                    })
+                  }}
+                  aria-label="Fork from this response"
+                />
+              </Tooltip>
+            </Show>
             <Tooltip
               value={copied() ? i18n.t("ui.message.copied") : i18n.t("ui.message.copyResponse")}
               placement="top"

@@ -2,6 +2,7 @@ import { Match, Show, Switch, createMemo } from "solid-js"
 import { Tooltip, type TooltipProps } from "@opencode-ai/ui/tooltip"
 import { ProgressCircle } from "@opencode-ai/ui/progress-circle"
 import { Button } from "@opencode-ai/ui/button"
+import { Icon } from "@opencode-ai/ui/icon"
 
 import { useFile } from "@/context/file"
 import { useLayout } from "@/context/layout"
@@ -9,12 +10,14 @@ import { useSync } from "@/context/sync"
 import { useLanguage } from "@/context/language"
 import { useProviders } from "@/hooks/use-providers"
 import { useSDK } from "@/context/sdk"
+import { useLocal } from "@/context/local"
 import { getSessionContextMetrics } from "@/components/session/session-context-metrics"
 import { useSessionLayout } from "@/pages/session/session-layout"
 import { createSessionTabs } from "@/pages/session/helpers"
+import { showToast } from "@/utils/toast"
 
 interface SessionContextUsageProps {
-  variant?: "button" | "indicator"
+  variant?: "button" | "indicator" | "toolbar"
   placement?: TooltipProps["placement"]
 }
 
@@ -35,6 +38,7 @@ export function SessionContextUsage(props: SessionContextUsageProps) {
   const layout = useLayout()
   const language = useLanguage()
   const sdk = useSDK()
+  const local = useLocal()
   const providers = useProviders(() => sdk().directory)
   const { params, tabs, view } = useSessionLayout()
 
@@ -74,6 +78,36 @@ export function SessionContextUsage(props: SessionContextUsageProps) {
     })
   }
 
+  const compactSession = async () => {
+    if (!params.id) return
+    const model = local.model.current()
+    if (!model) {
+      showToast({
+        title: language.t("toast.model.none.title"),
+        description: language.t("toast.model.none.description"),
+      })
+      return
+    }
+
+    showToast({
+      title: language.t("command.session.compact"),
+      description: "Summarizing session to free up context...",
+    })
+
+    try {
+      await sdk().client.session.summarize({
+        sessionID: params.id,
+        modelID: model.id,
+        providerID: model.provider.id,
+      })
+    } catch (e) {
+      showToast({
+        title: "Compaction Failed",
+        description: e instanceof Error ? e.message : String(e),
+      })
+    }
+  }
+
   const circle = () => (
     <div class="flex items-center justify-center">
       <ProgressCircle size={16} strokeWidth={2} percentage={context()?.usage ?? 0} />
@@ -108,6 +142,24 @@ export function SessionContextUsage(props: SessionContextUsageProps) {
       <Tooltip value={tooltipValue()} placement={props.placement ?? "top"}>
         <Switch>
           <Match when={variant() === "indicator"}>{circle()}</Match>
+          <Match when={variant() === "toolbar"}>
+            <div class="flex items-center gap-1.5 px-2 py-1 text-xs font-[440] text-v2-text-text-faint bg-v2-bg-background-muted rounded-md border border-v2-border-border-muted shrink-0 select-none">
+              <ProgressCircle size={12} strokeWidth={2} percentage={context()?.usage ?? 0} />
+              <span>Context: {context()?.usage ?? 0}%</span>
+              <Button
+                type="button"
+                variant="ghost"
+                class="h-5 w-5 p-0 ml-1 hover:bg-v2-bg-background-strong rounded flex items-center justify-center"
+                onClick={(e: MouseEvent) => {
+                  e.stopPropagation()
+                  compactSession()
+                }}
+                aria-label="Refresh / Compress Context"
+              >
+                <Icon name="reset" size="small" class="text-v2-text-text-muted" />
+              </Button>
+            </div>
+          </Match>
           <Match when={true}>
             <Button
               type="button"

@@ -2,6 +2,7 @@ import {
   createEffect,
   createMemo,
   createResource,
+  createSignal,
   For,
   on,
   onCleanup,
@@ -25,6 +26,7 @@ import { IconButton } from "@opencode-ai/ui/icon-button"
 import { Tooltip } from "@opencode-ai/ui/tooltip"
 import { DropdownMenu } from "@opencode-ai/ui/dropdown-menu"
 import { Dialog } from "@opencode-ai/ui/dialog"
+import { Spinner } from "@opencode-ai/ui/spinner"
 import { getFilename } from "@opencode-ai/core/util/path"
 import { Session } from "@opencode-ai/sdk/v2/client"
 import { usePlatform } from "@/context/platform"
@@ -45,6 +47,7 @@ import { retry } from "@opencode-ai/core/util/retry"
 import { playSoundById } from "@/utils/sound"
 import { createAim } from "@/utils/aim"
 import { setNavigate } from "@/utils/notification-click"
+import { sessionTitle } from "@/utils/session-title"
 import { Worktree as WorktreeState } from "@/utils/worktree"
 import { setSessionHandoff } from "@/pages/session/handoff"
 import { SessionRouteKey, SessionStateKey } from "@/utils/server-scope"
@@ -554,6 +557,8 @@ export default function LegacyLayout(props: ParentProps) {
     }
   })
 
+  const [showDebug, setShowDebug] = createSignal(false)
+
   const workspaceName = (directory: string, projectId?: string, branch?: string) => {
     const key = pathKey(directory)
     const direct = store.workspaceName[key] ?? store.workspaceName[directory]
@@ -892,6 +897,132 @@ export default function LegacyLayout(props: ParentProps) {
         navigate(`/${params.dir}/session`)
       }
     }
+  }
+
+  async function renameSession(sessionID: string, title: string) {
+    const trimmed = title.trim()
+    if (!trimmed) return
+    await serverSDK().client.session.update({ sessionID, title: trimmed })
+  }
+
+  function deleteSession(session: Session) {
+    dialog.show(() => <DialogDeleteSession session={session} />)
+  }
+
+  function DialogDeleteSession(dprops: { session: Session }) {
+    const dialogCtx = useDialog()
+    const sdk = useServerSDK()
+    const sync = useServerSync()
+    const nav = useNavigate()
+    const prms = useParams()
+    const lang = useLanguage()
+
+    const name = () => sessionTitle(dprops.session.title)
+
+    const handleDelete = async () => {
+      const result = await sdk()
+        .client.session.delete({ sessionID: dprops.session.id })
+        .then((x) => x.data)
+        .catch((err) => {
+          showToast({
+            title: lang.t("session.delete.failed.title"),
+            description: errorMessage(err, lang.t("common.requestFailed")),
+          })
+          return false
+        })
+
+      if (!result) {
+        dialogCtx.close()
+        return
+      }
+
+      if (dprops.session.id === prms.id) {
+        const sessions = (sync().child(dprops.session.directory)[0].session ?? []).filter(
+          (s) => !s.parentID && !s.time?.archived,
+        )
+        const index = sessions.findIndex((s) => s.id === dprops.session.id)
+        const next = sessions[index + 1] ?? sessions[index - 1]
+        if (next) nav(`/${prms.dir}/session/${next.id}`)
+        else nav(`/${prms.dir}/session`)
+      }
+
+      dialogCtx.close()
+    }
+
+    return (
+      <Dialog title={lang.t("session.delete.title")} fit>
+        <div class="flex flex-col gap-4 pl-6 pr-2.5 pb-3">
+          <div class="flex flex-col gap-1">
+            <span class="text-14-regular text-text-strong">
+              {lang.t("session.delete.confirm", { name: name() ?? "" })}
+            </span>
+          </div>
+          <div class="flex justify-end gap-2">
+            <Button variant="ghost" size="large" onClick={() => dialogCtx.close()}>
+              {lang.t("common.cancel")}
+            </Button>
+            <Button variant="primary" size="large" onClick={handleDelete}>
+              {lang.t("session.delete.button")}
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+    )
+  }
+
+  function DialogArchivedSessions(dprops: { project: LocalProject }) {
+    const dialogCtx = useDialog()
+    const sdk = useServerSDK()
+    const nav = useNavigate()
+    const dirs = [dprops.project.worktree, ...(dprops.project.sandboxes ?? [])]
+
+    const [archived] = createResource(async () => {
+      const all: Session[] = []
+      for (const dir of dirs) {
+        const result = await sdk().client.experimental.session.list({
+          directory: dir,
+          archived: true,
+        })
+        all.push(...(result.data ?? []).filter((s) => !s.parentID && s.time?.archived))
+      }
+      return all.sort((a, b) => (b.time.archived ?? 0) - (a.time.archived ?? 0))
+    })
+
+    return (
+      <Dialog title="Archived Sessions" fit>
+        <div class="flex flex-col gap-2 pl-6 pr-2.5 pb-3 min-w-72">
+          <Show when={!archived.loading} fallback={<div class="flex justify-center py-4"><Spinner /></div>}>
+            <For
+              each={archived()}
+              fallback={
+                <span class="text-14-regular text-text-weak py-4">No archived sessions</span>
+              }
+            >
+              {(session) => (
+                <Button
+                  variant="ghost"
+                  class="w-full text-left justify-start"
+                  onClick={() => {
+                    const dir = base64Encode(session.directory)
+                    nav(`/${dir}/session/${session.id}`)
+                    dialogCtx.close()
+                  }}
+                >
+                  <span class="truncate text-14-regular text-text-strong">
+                    {sessionTitle(session.title) ?? ""}
+                  </span>
+                </Button>
+              )}
+            </For>
+          </Show>
+          <div class="flex justify-end pt-2">
+            <Button variant="ghost" size="large" onClick={() => dialogCtx.close()}>
+              Close
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+    )
   }
 
   command.register("layout", () => {
@@ -1879,6 +2010,8 @@ export default function LegacyLayout(props: ParentProps) {
     clearHoverProjectSoon,
     prefetchSession,
     archiveSession,
+    renameSession,
+    deleteSession,
     workspaceName,
     renameWorkspace,
     editorOpen,
@@ -2192,6 +2325,18 @@ export default function LegacyLayout(props: ParentProps) {
                   </>
                 </Show>
               </div>
+              <div class="shrink-0 px-3 pb-3">
+                <Button
+                  variant="ghost"
+                  size="large"
+                  class="w-full"
+                  onClick={() => {
+                    dialog.show(() => <DialogArchivedSessions project={project} />)
+                  }}
+                >
+                  Archived
+                </Button>
+              </div>
             </>
           )}
         </Show>
@@ -2405,8 +2550,21 @@ export default function LegacyLayout(props: ParentProps) {
             </div>
           </div>
         </div>
-        {import.meta.env.DEV && import.meta.env.VITE_DISABLE_DEBUG_BAR !== "1" && <DebugBar />}
+        {import.meta.env.DEV && import.meta.env.VITE_DISABLE_DEBUG_BAR !== "1" && (
+          <Show when={showDebug()}>
+            <DebugBar />
+          </Show>
+        )}
       </div>
+      <button
+        type="button"
+        aria-label={showDebug() ? "Hide debug" : "Show debug"}
+        class="fixed bottom-4 right-12 z-50 hidden size-7 items-center justify-center rounded-full bg-background-base text-[11px] text-text-base shadow-[var(--shadow-lg-border-base)] transition-colors hover:text-text-strong md:flex"
+        classList={{ "text-text-strong": showDebug() }}
+        onClick={() => setShowDebug((v) => !v)}
+      >
+        D
+      </button>
       <HelpButton />
       <ToastRegion v2={false} />
     </div>

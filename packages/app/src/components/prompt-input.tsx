@@ -40,6 +40,7 @@ import { Select } from "@opencode-ai/ui/select"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { ModelSelectorPopover } from "@/components/dialog-select-model"
 import { useCommand } from "@/context/command"
+import { SessionContextUsage } from "@/components/session-context-usage"
 import { Persist, persisted } from "@/utils/persist"
 import { usePermission } from "@/context/permission"
 import { useLanguage } from "@/context/language"
@@ -1519,6 +1520,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                   </Show>
                   {props.toolbar}
                   <ComposerModelControl state={modelControlState()} />
+                  <SessionContextUsage variant="toolbar" />
                   <Show when={store.mode !== "shell" && showVariantControl()}>
                     <div
                       data-component="prompt-variant-control"
@@ -1901,6 +1903,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                         </Show>
                       </Show>
                     </Show>
+                    <SessionContextUsage variant="toolbar" />
                   </div>
                 </div>
               </div>

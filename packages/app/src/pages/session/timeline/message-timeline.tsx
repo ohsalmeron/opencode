@@ -966,6 +966,7 @@ export function MessageTimeline(props: {
                 deferToolContent
                 virtualizeDiff={false}
                 onContentRendered={onSizeChange}
+                actions={props.actions}
               />
             )}
           </Show>
