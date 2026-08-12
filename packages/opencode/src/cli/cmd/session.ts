@@ -82,13 +82,22 @@ export const SessionListCommand = effectCmd({
         type: "string",
         choices: ["table", "json"],
         default: "table",
+      })
+      .option("global", {
+        describe: "list sessions from all projects (not just current)",
+        type: "boolean",
+        default: false,
       }),
   handler: Effect.fn("Cli.session.list")(function* (args) {
-    const sessions = yield* Session.Service.use((svc) => svc.list({ roots: true, limit: args.maxCount }))
+    const svc = yield* Session.Service
+
+    const sessions: (Session.Info | Session.GlobalInfo)[] = args.global
+      ? yield* svc.listGlobal({ roots: true, limit: args.maxCount })
+      : yield* svc.list({ roots: true, limit: args.maxCount })
 
     if (sessions.length === 0) return
 
-    const output = args.format === "json" ? formatSessionJSON(sessions) : formatSessionTable(sessions)
+    const output = args.format === "json" ? formatSessionJSON(sessions) : formatSessionTable(sessions, args.global)
 
     const shouldPaginate = process.stdout.isTTY && !args.maxCount && args.format === "table"
 
@@ -115,26 +124,34 @@ export const SessionListCommand = effectCmd({
   }),
 })
 
-function formatSessionTable(sessions: Session.Info[]): string {
+function formatSessionTable(sessions: (Session.Info | Session.GlobalInfo)[], global: boolean): string {
   const lines: string[] = []
 
   const maxIdWidth = Math.max(20, ...sessions.map((s) => s.id.length))
   const maxTitleWidth = Math.max(25, ...sessions.map((s) => s.title.length))
+  const maxDirWidth = global ? Math.max(10, ...sessions.map((s) => s.directory.length)) : 0
 
-  const header = `Session ID${" ".repeat(maxIdWidth - 10)}  Title${" ".repeat(maxTitleWidth - 5)}  Updated`
+  const header =
+    `Session ID${" ".repeat(maxIdWidth - 10)}  Title${" ".repeat(maxTitleWidth - 5)}` +
+    (global ? `  Directory${" ".repeat(maxDirWidth - 9)}` : "") +
+    "  Updated"
   lines.push(header)
   lines.push("─".repeat(header.length))
   for (const session of sessions) {
     const truncatedTitle = Locale.truncate(session.title, maxTitleWidth)
     const timeStr = Locale.todayTimeOrDateTime(session.time.updated)
-    const line = `${session.id.padEnd(maxIdWidth)}  ${truncatedTitle.padEnd(maxTitleWidth)}  ${timeStr}`
+    const dirStr = global ? session.directory.padEnd(maxDirWidth) : ""
+    const line =
+      `${session.id.padEnd(maxIdWidth)}  ${truncatedTitle.padEnd(maxTitleWidth)}` +
+      (global ? `  ${dirStr}` : "") +
+      `  ${timeStr}`
     lines.push(line)
   }
 
   return lines.join(EOL)
 }
 
-function formatSessionJSON(sessions: Session.Info[]): string {
+function formatSessionJSON(sessions: (Session.Info | Session.GlobalInfo)[]): string {
   const jsonData = sessions.map((session) => ({
     id: session.id,
     title: session.title,

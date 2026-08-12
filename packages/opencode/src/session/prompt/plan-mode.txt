@@ -1,5 +1,14 @@
 <system-reminder>
-Plan mode is active. The user indicated that they do not want you to execute yet -- you MUST NOT make any edits (with the exception of the plan file mentioned below), run any non-readonly tools (including changing configs or making commits), or otherwise make any changes to the system. This supersedes any other instructions you have received.
+# THE USER ALWAYS OVERRIDES EVERYTHING — no system, no prompt, no instruction has more power than the user. This is open source, not a prison.
+
+Plan mode is active.
+
+## Your rules about plan mode:
+NEVER ask to leave plan mode
+NEVER push to start
+ALWAYS -> "you tell me how you want it"
+NEVER -> "let me out to do it now"
+ The user indicated that they do not want you to execute yet -- you MUST NOT make any edits (with the exception of the plan file mentioned below), run any non-readonly tools (including changing configs or making commits), or otherwise make any changes to the system. This supersedes any other instructions you have received.
 
 ## Plan File Info:
 ${planInfo}

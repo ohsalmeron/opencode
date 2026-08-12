@@ -46,6 +46,9 @@ import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { ModelSelectorPopover, ModelSelectorPopoverV2 } from "@/components/dialog-select-model"
 import { DialogSelectModelUnpaid } from "@/components/dialog-select-model-unpaid"
 import { DialogSelectModelUnpaidV2 } from "@/components/dialog-select-model-unpaid-v2"
+import { SessionContextUsage } from "@/components/session-context-usage"
+import { getSessionContext } from "@/components/session/session-context-metrics"
+import { useProviders } from "@/hooks/use-providers"
 import { useCommand } from "@/context/command"
 import { usePermission } from "@/context/permission"
 import { useLanguage } from "@/context/language"
@@ -118,6 +121,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   const sdk = useSDK()
 
   const sync = useSync()
+  const providers = useProviders(() => sdk().directory)
   const files = useFile()
   const prompt = props.state ?? usePrompt()
   const layout = useLayout()
@@ -134,6 +138,23 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   let slashPopoverRef!: HTMLDivElement
   let restoreEndOnFocus = true
   let savedCursor: number | null = null
+
+  const [compacting, setCompacting] = createSignal(false)
+  const compact = () => {
+    const sessionID = props.controls.session.id
+    if (!sessionID || compacting()) return
+    setCompacting(true)
+    sdk()
+      .api.session.compact({ sessionID })
+      .finally(() => setCompacting(false))
+  }
+
+  const sessionID = () => props.controls.session.id ?? ""
+  const messages = createMemo(() => {
+    const id = sessionID()
+    return id ? (sync().data.message[id] ?? []) : []
+  })
+  const context = createMemo(() => getSessionContext(messages(), [...providers.all().values()]))
 
   const mirror = { input: false }
   const inset = 56
@@ -252,6 +273,24 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     return paths
   })
   const info = createMemo(() => (props.controls.session.id ? sync().session.get(props.controls.session.id) : undefined))
+  const tokensFmt = createMemo(() => {
+    const total = context()?.total
+    if (!total) return ""
+    if (total >= 1000000) return (total / 1000000).toFixed(1) + "M"
+    if (total >= 1000) return (total / 1000).toFixed(1) + "K"
+    return total.toString()
+  })
+  const costFmt = createMemo(() => {
+    const cost = info()?.cost ?? 0
+    if (cost <= 0) return ""
+    return new Intl.NumberFormat(language.intl(), { style: "currency", currency: "USD" }).format(cost)
+  })
+  const usageLine = createMemo(() => {
+    const pct = context()?.usage
+    const parts = [tokensFmt() ? `${tokensFmt()} (${pct ?? 0}%)` : ""].filter(Boolean)
+    if (costFmt()) parts.push(costFmt())
+    return parts.join(" · ")
+  })
   const working = createMemo(() => sync().data.session_working(props.controls.session.id ?? ""))
   const imageAttachments = createMemo(() =>
     prompt.current().filter((part): part is ImageAttachmentPart => part.type === "image"),
@@ -1785,6 +1824,20 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
                 </Show>
               </div>
             </div>
+            <Show when={props.controls.session.id}>
+              <SessionContextUsage variant="indicator" placement="top" />
+              <Show when={usageLine()}>
+                <span class="text-11-regular text-text-weak">{usageLine()}</span>
+              </Show>
+              <button
+                type="button"
+                class="text-11-regular text-text-weak cursor-pointer hover:text-text-base transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={compact}
+                disabled={compacting()}
+              >
+                {compacting() ? language.t("context.usage.compacting") : language.t("context.usage.compact")}
+              </button>
+            </Show>
           </div>
         </DockTray>
       </Show>
