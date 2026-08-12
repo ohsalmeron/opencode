@@ -320,7 +320,9 @@ export const SettingsGeneralV2: Component<{
       title={language.t("settings.general.row.newInterfaceNotice.title")}
       description={language.t("settings.general.row.newInterfaceNotice.description")}
       dismiss={language.t("settings.general.row.newInterfaceNotice.dismiss")}
-      onDismiss={() => settings.general.dismissNewInterfaceNotice()}
+      onDismiss={settings.general.dismissNewInterfaceNotice}
+      switchBackLabel={language.t("settings.general.row.newInterfaceNotice.switchBack")}
+      onSwitchBack={() => settings.general.setNewLayoutDesigns(false)}
     />
   )
 

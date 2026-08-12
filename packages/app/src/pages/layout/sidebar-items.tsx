@@ -5,14 +5,16 @@ import { Icon as IconV2 } from "@opencode-ai/ui/v2/icon"
 import { IconButton } from "@opencode-ai/ui/icon-button"
 import { Spinner } from "@opencode-ai/ui/spinner"
 import { Tooltip } from "@opencode-ai/ui/tooltip"
+import { ContextMenu } from "@opencode-ai/ui/context-menu"
 import { getFilename } from "@opencode-ai/core/util/path"
-import { A, useParams } from "@solidjs/router"
+import { A, useNavigate, useParams } from "@solidjs/router"
 import { type Accessor, createMemo, For, type JSX, Match, Show, Switch } from "solid-js"
 import { useServerSync } from "@/context/server-sync"
 import { useLanguage } from "@/context/language"
 import { getAvatarColors, type LocalProject, useLayout } from "@/context/layout"
 import { useNotification } from "@/context/notification"
 import { usePermission } from "@/context/permission"
+import { base64Encode } from "@opencode-ai/core/util/encode"
 import { messageAgentColor } from "@/utils/agent"
 import { sessionTitle } from "@/utils/session-title"
 import { sessionPermissionRequest } from "../session/composer/session-request-tree"
@@ -103,43 +105,86 @@ const SessionRow = (props: {
   sidebarOpened: Accessor<boolean>
   warmPress: () => void
   warmFocus: () => void
+  archiveSession: (session: Session) => Promise<void>
 }): JSX.Element => {
+  const language = useLanguage()
+  const navigate = useNavigate()
+
+  const handleFork = () => {
+    const dir = base64Encode(props.session.directory)
+    navigate(`/${dir}/session/${props.session.id}?fork=true`)
+  }
+
   const title = () => sessionTitle(props.session.title)
 
   return (
-    <A
-      href={`/${props.slug}/session/${props.session.id}`}
-      class={`flex items-center gap-2 min-w-0 w-full text-left focus:outline-none ${props.dense ? "py-0.5" : "py-1"}`}
-      onPointerDown={props.warmPress}
-      onFocus={props.warmFocus}
-      onClick={() => {
-        if (props.sidebarOpened()) return
-        props.clearHoverProjectSoon()
-      }}
-    >
-      <Show when={props.isWorking() || props.hasPermissions() || props.hasError() || props.unseenCount() > 0}>
-        <div
-          class="shrink-0 size-6 flex items-center justify-center"
-          style={{ color: props.tint() ?? "var(--icon-interactive-base)" }}
+    <ContextMenu>
+      <ContextMenu.Trigger>
+        <A
+          href={`/${props.slug}/session/${props.session.id}`}
+          class={`flex items-center gap-2 min-w-0 w-full text-left focus:outline-none ${props.dense ? "py-0.5" : "py-1"}`}
+          onPointerDown={props.warmPress}
+          onFocus={props.warmFocus}
+          onClick={() => {
+            if (props.sidebarOpened()) return
+            props.clearHoverProjectSoon()
+          }}
         >
-          <Switch>
-            <Match when={props.isWorking()}>
-              <Spinner class="size-[15px]" />
-            </Match>
-            <Match when={props.hasPermissions()}>
-              <div class="size-1.5 rounded-full bg-surface-warning-strong" />
-            </Match>
-            <Match when={props.hasError()}>
-              <div class="size-1.5 rounded-full bg-text-diff-delete-base" />
-            </Match>
-            <Match when={props.unseenCount() > 0}>
-              <div class="size-1.5 rounded-full bg-text-interactive-base" />
-            </Match>
-          </Switch>
-        </div>
-      </Show>
-      <span class="text-14-regular text-text-strong min-w-0 flex-1 truncate">{title()}</span>
-    </A>
+          <Show when={props.isWorking() || props.hasPermissions() || props.hasError() || props.unseenCount() > 0}>
+            <div
+              class="shrink-0 size-6 flex items-center justify-center"
+              style={{ color: props.tint() ?? "var(--icon-interactive-base)" }}
+            >
+              <Switch>
+                <Match when={props.isWorking()}>
+                  <Spinner class="size-[15px]" />
+                </Match>
+                <Match when={props.hasPermissions()}>
+                  <div class="size-1.5 rounded-full bg-surface-warning-strong" />
+                </Match>
+                <Match when={props.hasError()}>
+                  <div class="size-1.5 rounded-full bg-text-diff-delete-base" />
+                </Match>
+                <Match when={props.unseenCount() > 0}>
+                  <div class="size-1.5 rounded-full bg-text-interactive-base" />
+                </Match>
+              </Switch>
+            </div>
+          </Show>
+          <span class="text-14-regular text-text-strong min-w-0 flex-1 truncate">{title()}</span>
+        </A>
+      </ContextMenu.Trigger>
+      <ContextMenu.Portal>
+        <ContextMenu.Content class="mt-1 min-w-[160px]">
+          <ContextMenu.Item onSelect={handleFork}>
+            <ContextMenu.ItemLabel>{language.t("session.contextmenu.fork")}</ContextMenu.ItemLabel>
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            onSelect={() => {
+              props.archiveSession(props.session)
+            }}
+          >
+            <ContextMenu.ItemLabel>{language.t("session.contextmenu.archive")}</ContextMenu.ItemLabel>
+          </ContextMenu.Item>
+          <ContextMenu.Item
+            onSelect={() => {
+              // TODO: implement rename
+            }}
+          >
+            <ContextMenu.ItemLabel>{language.t("session.contextmenu.rename")}</ContextMenu.ItemLabel>
+          </ContextMenu.Item>
+          <ContextMenu.Separator />
+          <ContextMenu.Item
+            onSelect={() => {
+              // TODO: implement delete
+            }}
+            class="text-text-on-critical-base hover:bg-surface-critical-weak"
+          >
+            <ContextMenu.ItemLabel>{language.t("session.contextmenu.delete")}</ContextMenu.ItemLabel>
+          </ContextMenu.Item>
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu>
   )
 }
 
@@ -212,6 +257,7 @@ export const SessionItem = (props: SessionItemProps): JSX.Element => {
       sidebarOpened={layout.sidebar.opened}
       warmPress={() => warm(2, "high")}
       warmFocus={() => warm(2, "high")}
+      archiveSession={props.archiveSession}
     />
   )
 

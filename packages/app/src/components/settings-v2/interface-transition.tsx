@@ -39,6 +39,8 @@ export function LayoutRetirementNotice(props: {
   description: string
   dismiss: string
   onDismiss: () => void
+  switchBackLabel: string
+  onSwitchBack: () => void
 }) {
   return (
     <div class="settings-v2-section">
@@ -46,6 +48,11 @@ export function LayoutRetirementNotice(props: {
         <SettingsRowV2 title={props.title} description={props.description}>
           <ButtonV2 size="small" variant="ghost-muted" onClick={props.onDismiss}>
             {props.dismiss}
+          </ButtonV2>
+        </SettingsRowV2>
+        <SettingsRowV2 title={props.switchBackLabel} description="">
+          <ButtonV2 size="small" variant="contrast" onClick={props.onSwitchBack}>
+            {props.switchBackLabel}
           </ButtonV2>
         </SettingsRowV2>
       </SettingsListV2>
