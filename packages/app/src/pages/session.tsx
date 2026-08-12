@@ -367,7 +367,7 @@ export default function Page() {
   const comments = useComments()
   const command = useCommand()
   const terminal = useTerminal()
-  const [searchParams, setSearchParams] = useSearchParams<{ prompt?: string }>()
+  const [searchParams, setSearchParams] = useSearchParams<{ prompt?: string; fork?: string }>()
   const location = useLocation()
   const navigate = useNavigate()
   const { params, sessionKey, workspaceKey, tabs, view } = useSessionLayout()
@@ -384,6 +384,18 @@ export default function Page() {
       if (!text) return
       prompt.set([{ type: "text", content: text, start: 0, end: text.length }], text.length)
       setSearchParams({ ...searchParams, prompt: undefined })
+    })
+  })
+
+  createEffect(() => {
+    if (searchParams.fork !== "true") return
+    const sessionID = params.id
+    if (!sessionID) return
+    untrack(() => {
+      const messages = sync().data.message[sessionID] ?? []
+      const messageID = messages.length > 0 ? messages[messages.length - 1].id : sessionID
+      setSearchParams({ ...searchParams, fork: undefined })
+      void fork({ sessionID, messageID })
     })
   })
 
@@ -1923,7 +1935,16 @@ export default function Page() {
     download()
   }
 
-  const actions = { revert, openAttachment }
+  const fork = (input: { sessionID: string; messageID: string }) => {
+    const dir = base64Encode(sdk().directory)
+    return sdk()
+      .api.session.fork({ sessionID: input.sessionID, messageID: input.messageID })
+      .then((forked) => {
+        navigate(`/${dir}/session/${forked.id}`)
+      })
+  }
+
+  const actions = { revert, fork, openAttachment }
 
   createEffect(() => {
     const sessionID = params.id

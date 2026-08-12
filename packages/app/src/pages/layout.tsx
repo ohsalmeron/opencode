@@ -53,7 +53,6 @@ import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { useTheme, type ColorScheme } from "@opencode-ai/ui/theme/context"
 import { useCommand, type CommandOption } from "@/context/command"
 import { ConstrainDragXAxis, getDraggableId } from "@/utils/solid-dnd"
-import { DebugBar } from "@/components/debug-bar"
 import { TabsInfoPopup } from "@/components/help-button"
 import { Titlebar, type TitlebarUpdate } from "@/components/titlebar"
 import { useDirectoryPicker } from "@/components/directory-picker"
@@ -155,7 +154,6 @@ export default function LegacyLayout(props: ParentProps) {
     sizing: false,
     peek: undefined as string | undefined,
     peeked: false,
-    debugTools: true,
   })
 
   const updateVersion = () => {
@@ -2250,9 +2248,12 @@ export default function LegacyLayout(props: ParentProps) {
       {autoselecting() ?? ""}
       <Titlebar
         update={titlebarUpdate}
-        debugTools={
-          import.meta.env.DEV && import.meta.env.VITE_DISABLE_DEBUG_BAR !== "1"
-            ? { visible: state.debugTools, toggle: () => setState("debugTools", (value) => !value) }
+        layoutToggle={
+          import.meta.env.DEV
+            ? { 
+                isNewLayout: settings.general.newLayoutDesigns(), 
+                toggle: () => settings.general.setNewLayoutDesigns(!settings.general.newLayoutDesigns()) 
+              }
             : undefined
         }
       />
@@ -2401,7 +2402,6 @@ export default function LegacyLayout(props: ParentProps) {
             </div>
           </div>
         </div>
-        {import.meta.env.DEV && import.meta.env.VITE_DISABLE_DEBUG_BAR !== "1" && state.debugTools && <DebugBar />}
       </div>
       <TabsInfoPopup />
       <ToastRegion v2={false} />

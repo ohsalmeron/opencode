@@ -1,4 +1,4 @@
-import { Match, Show, Switch, createMemo, type ComponentProps, type JSX } from "solid-js"
+import { Match, Show, Switch, createMemo, createSignal, type ComponentProps, type JSX } from "solid-js"
 import { ProgressCircle } from "@opencode-ai/ui/progress-circle"
 import { ProgressCircleV2 } from "@opencode-ai/ui/v2/progress-circle-v2"
 import { Button } from "@opencode-ai/ui/button"
@@ -125,14 +125,32 @@ export function SessionContextUsage(props: SessionContextUsageProps) {
     </div>
   )
 
+  const [compacting, setCompacting] = createSignal(false)
+  const compact = () => {
+    const sessionID = params.id
+    if (!sessionID || compacting()) return
+    setCompacting(true)
+    sdk()
+      .api.session.compact({ sessionID })
+      .finally(() => setCompacting(false))
+  }
+
   const tooltipValue = () => (
-    <div class="flex w-[120px] flex-col gap-2">
+    <div class="flex w-[140px] flex-col gap-2">
       <ContextTooltipRow name={language.t("context.usage.cost")} value={cost()} />
       <ContextTooltipRow name={language.t("context.usage.usage")} value={`${context()?.usage ?? 0}%`} />
       <ContextTooltipRow
         name={language.t("context.usage.tokens")}
         value={context()?.total.toLocaleString(language.intl()) ?? "0"}
       />
+      <button
+        type="button"
+        class="mt-1 w-full rounded-sm bg-v2-background-bg-layer-02 px-2 py-1 text-11-regular text-v2-text-text-base cursor-pointer hover:bg-v2-overlay-simple-overlay-hover disabled:opacity-50 disabled:cursor-not-allowed"
+        onClick={compact}
+        disabled={compacting()}
+      >
+        {compacting() ? language.t("context.usage.compacting") : language.t("context.usage.compact")}
+      </button>
     </div>
   )
 
