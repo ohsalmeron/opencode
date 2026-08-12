@@ -30,7 +30,7 @@ describe("agent visibility", () => {
 
 describe("layout transition", () => {
   test("blank profiles default to the new layout", () => {
-    expect(newLayoutDesignsDefault).toBe(true)
+    expect(newLayoutDesignsDefault).toBe(false)
   })
 
   test("hides the transition until a sunset is scheduled", () => {
@@ -56,7 +56,8 @@ describe("layout transition", () => {
   test("sunset replaces the toggle with a dismissible notice", () => {
     expect(layoutTransitionState(true, true, true, false)).toEqual({ available: false, notice: true })
     expect(layoutTransitionState(true, true, true, true)).toEqual({ available: false, notice: false })
-    expect(resolveNewLayoutDesigns(true, false)).toBe(true)
+    expect(resolveNewLayoutDesigns(true, false)).toBe(false)
+    expect(resolveNewLayoutDesigns(true, undefined)).toBe(true)
   })
 
   test("caps checks for sunsets beyond the browser timeout limit", () => {

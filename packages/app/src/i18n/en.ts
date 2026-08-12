@@ -516,6 +516,8 @@ export const dict = {
   "context.usage.cost": "Cost",
   "context.usage.clickToView": "Click to view context",
   "context.usage.view": "View context usage",
+  "context.usage.compact": "Compact",
+  "context.usage.compacting": "Compacting…",
 
   "language.en": "English",
   "language.zh": "简体中文",
@@ -674,6 +676,10 @@ export const dict = {
   "session.error.notFound.description": "This tab points to a session that no longer exists on this server.",
   "session.error.notFound.closeTab": "Close Tab",
   "session.error.serverConnection": "Can't connect to this server",
+  "session.contextmenu.fork": "Fork",
+  "session.contextmenu.archive": "Archive",
+  "session.contextmenu.rename": "Rename",
+  "session.contextmenu.delete": "Delete",
   "session.review.filesChanged": "Files Changed {{count}}",
   "session.review.change.one": "Change",
   "session.review.change.other": "Changes",
@@ -956,8 +962,9 @@ export const dict = {
   "settings.general.row.newInterface.description":
     "Use the new tabs and home layout. Switch between layouts for a limited time.",
   "settings.general.row.newInterfaceNotice.title": "You're now using new layout",
-  "settings.general.row.newInterfaceNotice.description": "The previous layout is no longer available",
+  "settings.general.row.newInterfaceNotice.description": "The previous layout is not the default anymore",
   "settings.general.row.newInterfaceNotice.dismiss": "Dismiss",
+  "settings.general.row.newInterfaceNotice.switchBack": "Switch back to original layout",
   "settings.general.row.pinchZoom.title": "Pinch to zoom",
   "settings.general.row.pinchZoom.description": "Allow trackpad pinch and Ctrl-scroll gestures to zoom",
 

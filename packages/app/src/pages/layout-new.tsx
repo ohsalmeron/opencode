@@ -1,14 +1,13 @@
 import { createEffect, Suspense, type ParentProps } from "solid-js"
-import { createStore } from "solid-js/store"
-import { DebugBar } from "@/components/debug-bar"
 import { TabsInfoPopup } from "@/components/help-button"
 import { Titlebar, type TitlebarUpdate } from "@/components/titlebar"
 import { usePlatform } from "@/context/platform"
+import { useSettings } from "@/context/settings"
 import { setV2Toast, ToastRegion } from "@/utils/toast"
 
 export default function NewLayout(props: ParentProps) {
   const platform = usePlatform()
-  const [state, setState] = createStore({ debugTools: true })
+  const settings = useSettings()
 
   createEffect(() => setV2Toast(true))
 
@@ -32,16 +31,18 @@ export default function NewLayout(props: ParentProps) {
     >
       <Titlebar
         update={update}
-        debugTools={
+        layoutToggle={
           import.meta.env.DEV
-            ? { visible: state.debugTools, toggle: () => setState("debugTools", (value) => !value) }
+            ? {
+                isNewLayout: settings.general.newLayoutDesigns(),
+                toggle: () => settings.general.setNewLayoutDesigns(!settings.general.newLayoutDesigns()),
+              }
             : undefined
         }
       />
       <main class="flex-1 min-h-0 min-w-0 overflow-x-hidden flex flex-col items-start contain-strict">
         <Suspense>{props.children}</Suspense>
       </main>
-      {import.meta.env.DEV && state.debugTools && <DebugBar inline />}
       <TabsInfoPopup />
       <ToastRegion v2 />
     </div>
