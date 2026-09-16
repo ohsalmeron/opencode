@@ -71,7 +71,7 @@ export function Titlebar(props: { update?: TitlebarUpdate; layoutToggle?: { isNe
   const navigate = useNavigate()
   const location = useLocation()
   const params = useParams()
-  const useV2Titlebar = createMemo(() => settings.general.newLayoutDesigns())
+  const useV2Titlebar = createMemo(() => false)
   const mobile = createMediaQuery("(max-width: 767px)")
   const bottom = createMemo(() => useV2Titlebar() && mobile() && settings.general.mobileTitlebarPosition() === "bottom")
 

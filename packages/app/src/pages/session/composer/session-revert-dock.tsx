@@ -40,7 +40,7 @@ export function SessionRevertDock(props: {
 
   return (
     <Show
-      when={settings.general.newLayoutDesigns()}
+      when={false}
       fallback={
         <DockTray data-component="session-revert-dock">
           <div

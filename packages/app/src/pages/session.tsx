@@ -180,21 +180,8 @@ function TargetSessionSettingsCommand() {
 export function SessionRouteErrorBoundary(
   props: ParentProps<{ sessionID?: string; serverKey?: ServerConnection.Key; padded?: boolean }>,
 ) {
-  const settings = useSettings()
   return (
-    <ErrorBoundary
-      fallback={(error) =>
-        settings.general.newLayoutDesigns() ? (
-          <SessionRouteFrame padded={props.padded}>
-            <SessionPanelFrame newLayout raised={!!props.sessionID}>
-              <SessionErrorFallback error={error} sessionID={props.sessionID} serverKey={props.serverKey} />
-            </SessionPanelFrame>
-          </SessionRouteFrame>
-        ) : (
-          <ErrorPage error={error} />
-        )
-      }
-    >
+    <ErrorBoundary fallback={(error) => <ErrorPage error={error} />}>
       {props.children}
     </ErrorBoundary>
   )
@@ -374,7 +361,7 @@ export default function Page() {
   const reviewMode = () => view().review.mode() ?? "git"
   const reviewFile = () => view().review.file()
   const sessionOwnership = createSessionOwnership(sessionKey)
-  const newSessionDesign = createMemo(() => settings.general.newLayoutDesigns())
+  const newSessionDesign = createMemo(() => false)
 
   createEffect(() => {
     if (!prompt.ready()) return
@@ -492,7 +479,7 @@ export default function Page() {
   const sessionPanelAvailable = createMemo(() => {
     const width = panelRowWidth()
     if (width === undefined) return undefined
-    return width - (settings.general.newLayoutDesigns() ? 8 : 0)
+    return width
   })
   const sessionPanelMax = createMemo(() => {
     const available = sessionPanelAvailable()
@@ -1372,8 +1359,8 @@ export default function Page() {
     <div
       classList={{
         "flex flex-col h-full overflow-hidden contain-strict": true,
-        "bg-v2-background-bg-base": settings.general.newLayoutDesigns(),
-        "bg-background-stronger": !settings.general.newLayoutDesigns(),
+        "bg-v2-background-bg-base": false,
+        "bg-background-stronger": true,
       }}
     >
       <div class="relative pt-2 flex-1 min-h-0 overflow-hidden">
@@ -2035,19 +2022,19 @@ export default function Page() {
 
   useUsageExceededDialogs()
 
-  const mobileTabs = (compact = false, bottom = false) => (
+  const mobileTabs = (compact = false) => (
     <Tabs value={store.mobileTab} class="h-auto">
       <Tabs.List
         classList={{
           "!h-9": compact,
-          "[&::after]:!border-b-0 [&::after]:!border-t [&::after]:!border-border-weak-base": bottom,
+          "[&::after]:!border-b-0 [&::after]:!border-t [&::after]:!border-border-weak-base": false,
         }}
       >
         <Tabs.Trigger
           value="session"
           classList={{
             "!w-1/2 !max-w-none": true,
-            "!border-b-0 !border-t !border-border-weak-base [&:has([data-selected])]:!border-t-transparent": bottom,
+            "!border-b-0 !border-t !border-border-weak-base [&:has([data-selected])]:!border-t-transparent": false,
           }}
           classes={{ button: compact ? "w-full !py-2" : "w-full" }}
           onClick={() => setStore("mobileTab", "session")}
@@ -2058,7 +2045,7 @@ export default function Page() {
           value="changes"
           classList={{
             "!w-1/2 !max-w-none !border-r-0": true,
-            "!border-b-0 !border-t !border-border-weak-base [&:has([data-selected])]:!border-t-transparent": bottom,
+            "!border-b-0 !border-t !border-border-weak-base [&:has([data-selected])]:!border-t-transparent": false,
           }}
           classes={{ button: compact ? "w-full !py-2" : "w-full" }}
           onClick={() => setStore("mobileTab", "changes")}
@@ -2070,9 +2057,6 @@ export default function Page() {
       </Tabs.List>
     </Tabs>
   )
-  const mobileTabsBottom = createMemo(
-    () => !isDesktop() && settings.general.newLayoutDesigns() && settings.general.mobileTitlebarPosition() === "bottom",
-  )
 
   const sessionErrorFallback = (error: unknown, reset: () => void) => {
     createEffect(on(sessionKey, reset, { defer: true }))
@@ -2082,9 +2066,6 @@ export default function Page() {
   const sessionPanelContent = () => (
     <>
       {sessionSync() ?? ""}
-      <Show when={!isDesktop() && !!params.id && settings.general.newLayoutDesigns() && !mobileTabsBottom()}>
-        {mobileTabs(true)}
-      </Show>
       <div class="flex-1 min-h-0 overflow-hidden">
         <Switch>
           <Match when={params.id && mobileChanges()}>
@@ -2263,7 +2244,6 @@ export default function Page() {
           )
         }}
       </Show>
-      <Show when={!!params.id && mobileTabsBottom()}>{mobileTabs(true, true)}</Show>
     </>
   )
 
@@ -2273,11 +2253,8 @@ export default function Page() {
       <div
         ref={panelRow}
         class="flex-1 min-h-0 flex flex-col md:flex-row"
-        classList={{
-          "gap-2 p-2": settings.general.newLayoutDesigns(),
-        }}
       >
-        <Show when={!isDesktop() && !!params.id && !settings.general.newLayoutDesigns()}>{mobileTabs()}</Show>
+        <Show when={!isDesktop() && !!params.id}>{mobileTabs()}</Show>
 
         <div
           classList={{
@@ -2289,25 +2266,15 @@ export default function Page() {
             width: sessionPanelWidth(),
           }}
         >
-          {settings.general.newLayoutDesigns() ? (
-            <Show when={sessionPanelKey()} keyed>
-              {(_) => (
-                <SessionPanelFrame newLayout raised={!!params.id}>
-                  <ErrorBoundary fallback={sessionErrorFallback}>{sessionPanelContent()}</ErrorBoundary>
-                </SessionPanelFrame>
-              )}
-            </Show>
-          ) : (
-            <SessionPanelFrame newLayout={false} raised={!!params.id}>
-              {sessionPanelContent()}
-            </SessionPanelFrame>
-          )}
+          <SessionPanelFrame newLayout={false} raised={!!params.id}>
+            {sessionPanelContent()}
+          </SessionPanelFrame>
 
           <Show when={desktopSessionResizeOpen()}>
             <div onPointerDown={() => size.start()}>
               <ResizeHandle
                 classList={{
-                  "-end-1": settings.general.newLayoutDesigns(),
+                  "-end-1": false,
                 }}
                 direction="horizontal"
                 size={sessionPanelResizedWidth()}

@@ -61,7 +61,7 @@ export const DialogConnectProvider: Component<{
   const controller = props.controller ?? fallback
   const language = useLanguage()
   const settings = useSettings()
-  const newLayout = settings.general.newLayoutDesigns
+  const newLayout = () => false
   const reset = controller.back
   const back = { current: reset }
   let focusHost: HTMLDivElement | undefined
@@ -156,7 +156,7 @@ function ProviderPicker(props: {
   onPrepare?: () => void
 }) {
   const settings = useSettings()
-  if (settings.general.newLayoutDesigns())
+  if (false)
     return <ProviderPickerV2 directory={props.directory} onSelect={props.onSelect} onPrepare={props.onPrepare} />
   const providers = useProviders(() => props.directory?.())
   const language = useLanguage()
@@ -389,7 +389,7 @@ function ProviderConnection(props: {
   const language = useLanguage()
   const platform = usePlatform()
   const settings = useSettings()
-  const newLayout = settings.general.newLayoutDesigns
+  const newLayout = () => false
   const providers = useProviders(() => props.directory?.())
   const directory = () => props.directory?.() ?? decode64(params.dir)
   const location = () => {

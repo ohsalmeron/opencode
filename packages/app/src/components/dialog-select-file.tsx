@@ -20,48 +20,12 @@ import {
   uniqueCommandPaletteEntries,
   type CommandPaletteEntry,
 } from "./command-palette"
-import { DialogCommandPaletteV2 } from "./dialog-command-palette-v2"
-
-const DialogSelectFileV2 = lazy(() =>
-  import("./dialog-select-directory-v2").then((module) => ({ default: module.DialogSelectDirectoryV2 })),
-)
 type DialogSelectFileMode = "all" | "files"
 
 export function DialogSelectFile(props: { mode?: DialogSelectFileMode; onOpenFile?: (path: string) => void }) {
-  const platform = usePlatform()
-  const settings = useSettings()
   const filesOnly = () => props.mode === "files"
 
-  if (!filesOnly() && settings.general.newLayoutDesigns()) {
-    return <DialogCommandPaletteV2 onOpenFile={props.onOpenFile} />
-  }
-
-  if (filesOnly() && platform.platform === "desktop" && settings.general.newLayoutDesigns()) {
-    return <DialogSelectFileDesktopV2 onOpenFile={props.onOpenFile} />
-  }
-
   return <DialogSelectFileLegacy filesOnly={filesOnly} onOpenFile={props.onOpenFile} />
-}
-
-function DialogSelectFileDesktopV2(props: { onOpenFile?: (path: string) => void }) {
-  const language = useLanguage()
-  const serverSDK = useServerSDK()
-  const { params } = useSessionLayout()
-  const projectDirectory = createMemo(() => decode64(params.dir) ?? "")
-  const openFile = createCommandPaletteFileOpener(props.onOpenFile)
-
-  return (
-    <DialogSelectFileV2
-      server={serverSDK().server}
-      mode="file"
-      start={projectDirectory()}
-      title={language.t("session.header.searchFiles")}
-      onSelect={(result) => {
-        if (typeof result !== "string") return
-        openFile(result)
-      }}
-    />
-  )
 }
 
 function DialogSelectFileLegacy(props: { filesOnly: () => boolean; onOpenFile?: (path: string) => void }) {

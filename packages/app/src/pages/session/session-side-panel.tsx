@@ -288,7 +288,7 @@ export function SessionSidePanel(props: {
   })
 
   return (
-    <Show when={isDesktop() && !(settings.general.newLayoutDesigns() && !params.id)}>
+    <Show when={isDesktop()}>
       <aside
         id="review-panel"
         aria-label={language.t("session.panel.reviewAndFiles")}
@@ -296,14 +296,14 @@ export function SessionSidePanel(props: {
         inert={!open()}
         class="relative min-w-0 flex overflow-hidden"
         classList={{
-          "bg-v2-background-bg-base": settings.general.newLayoutDesigns(),
-          "bg-background-base": !settings.general.newLayoutDesigns(),
+          "bg-v2-background-bg-base": false,
+          "bg-background-base": true,
           "h-full shrink-0": !props.stacked,
           "h-full min-h-0": props.stacked,
           "pointer-events-none": !open(),
           "transition-[width] duration-[240ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width] motion-reduce:transition-none":
             !props.size.active() && !props.reviewSnap,
-          "rounded-[10px] shadow-[var(--v2-elevation-raised)] overflow-hidden": settings.general.newLayoutDesigns(),
+          "rounded-[10px] shadow-[var(--v2-elevation-raised)] overflow-hidden": false,
           "flex-1": reviewOpen(),
         }}
         style={{ width: panelWidth() }}
@@ -312,22 +312,22 @@ export function SessionSidePanel(props: {
           <div
             class="size-full flex"
             classList={{
-              "border-l border-border-weaker-base": !settings.general.newLayoutDesigns(),
+              "border-l border-border-weaker-base": true,
             }}
           >
             <Show when={reviewOpen()}>
               <div
                 class="relative min-w-0 h-full flex-1 overflow-hidden"
                 classList={{
-                  "bg-v2-background-bg-base": settings.general.newLayoutDesigns(),
-                  "bg-background-base": !settings.general.newLayoutDesigns(),
+                  "bg-v2-background-bg-base": false,
+                  "bg-background-base": true,
                 }}
               >
                 <div
                   class="size-full min-w-0 h-full"
                   classList={{
-                    "bg-v2-background-bg-base": settings.general.newLayoutDesigns(),
-                    "bg-background-base": !settings.general.newLayoutDesigns(),
+                    "bg-v2-background-bg-base": false,
+                    "bg-background-base": true,
                   }}
                 >
                   <Show
@@ -438,8 +438,8 @@ export function SessionSidePanel(props: {
                               <div
                                 class="h-full shrink-0 sticky right-0 z-10 flex items-center justify-center pr-3"
                                 classList={{
-                                  "bg-v2-background-bg-base": settings.general.newLayoutDesigns(),
-                                  "bg-background-stronger": !settings.general.newLayoutDesigns(),
+                                  "bg-v2-background-bg-base": false,
+                                  "bg-background-stronger": true,
                                 }}
                               >
                                 <TooltipKeybind
@@ -657,8 +657,8 @@ export function SessionSidePanel(props: {
                             <div
                               class="h-full shrink-0 sticky right-0 z-10 flex items-center justify-center"
                               classList={{
-                                "bg-v2-background-bg-base": settings.general.newLayoutDesigns(),
-                                "bg-background-stronger": !settings.general.newLayoutDesigns(),
+                                "bg-v2-background-bg-base": false,
+                                "bg-background-stronger": true,
                               }}
                             >
                               <TooltipV2
@@ -780,7 +780,7 @@ export function SessionSidePanel(props: {
                     <Tabs.List>
                       <Tabs.Trigger value="changes" class="flex-1" classes={{ button: "w-full" }}>
                         <Show
-                          when={settings.general.newLayoutDesigns()}
+                          when={false}
                           fallback={
                             <>
                               {props.reviewCount()}{" "}

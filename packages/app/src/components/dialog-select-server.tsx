@@ -265,7 +265,6 @@ export function useServerManagementController(options: { onSelect?: () => void; 
         return
       }
       if (
-        !settings.general.newLayoutDesigns() &&
         (await detectServerProtocol(conn.http, platform.fetch ?? globalThis.fetch)) === "v2"
       ) {
         setStore("addServer", { error: language.t("dialog.server.add.error") })
@@ -316,7 +315,6 @@ export function useServerManagementController(options: { onSelect?: () => void; 
         return
       }
       if (
-        !settings.general.newLayoutDesigns() &&
         (await detectServerProtocol(conn.http, platform.fetch ?? globalThis.fetch)) === "v2"
       ) {
         setStore("editServer", { error: language.t("dialog.server.add.error") })
@@ -353,14 +351,14 @@ export function useServerManagementController(options: { onSelect?: () => void; 
 
   const settings = useSettings()
   const current = createMemo<ServerConnection.Any | undefined>(() =>
-    settings.general.newLayoutDesigns()
+    false
       ? undefined
       : (items().find((x) => ServerConnection.key(x) === server.key) ?? items()[0]),
   )
 
   const sortedItems = createMemo(() => {
     const raw = items()
-    const list = settings.general.newLayoutDesigns()
+    const list = false
       ? raw
       : raw.filter((x) => global.ensureServerCtx(x).sdk.protocolKind() !== "v2")
     if (!list.length) return list
@@ -587,7 +585,7 @@ export function ServerConnectionList(props: { controller: ReturnType<typeof useS
         items={props.controller.sortedItems}
         key={(x) => x.http.url}
         onSelect={(x) => {
-          if (x && !settings.general.newLayoutDesigns()) void props.controller.select(x)
+          if (x) void props.controller.select(x)
         }}
         divider={true}
       >

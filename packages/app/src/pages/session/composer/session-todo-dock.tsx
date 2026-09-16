@@ -95,11 +95,11 @@ export function SessionTodoDock(props: {
 
   return (
     <Dynamic
-      component={settings.general.newLayoutDesigns() ? "div" : DockTray}
+      component={DockTray}
       data-component="session-todo-dock"
       classList={{
         "w-full overflow-hidden rounded-xl border-[0.5px] border-v2-border-border-base bg-v2-background-bg-layer-01":
-          settings.general.newLayoutDesigns(),
+          false,
       }}
       style={{
         "overflow-x": "visible",
@@ -112,8 +112,8 @@ export function SessionTodoDock(props: {
           data-action="session-todo-toggle"
           classList={{
             "flex items-center gap-2 overflow-visible": true,
-            "h-[42px] pl-4 pr-2": settings.general.newLayoutDesigns(),
-            "pl-3 pr-2 py-2": !settings.general.newLayoutDesigns(),
+            "h-[42px] pl-4 pr-2": false,
+            "pl-3 pr-2 py-2": !false,
           }}
           role="button"
           tabIndex={0}
@@ -128,8 +128,8 @@ export function SessionTodoDock(props: {
             classList={{
               "cursor-default inline-flex items-baseline shrink-0 overflow-visible": true,
               "font-[440] text-[13px] leading-5 tracking-[-0.04px] text-v2-text-text-muted":
-                settings.general.newLayoutDesigns(),
-              "text-14-regular text-text-strong": !settings.general.newLayoutDesigns(),
+                false,
+              "text-14-regular text-text-strong": !false,
             }}
             aria-label={label()}
             style={{
@@ -163,7 +163,7 @@ export function SessionTodoDock(props: {
           >
             <TextReveal
               class={
-                settings.general.newLayoutDesigns()
+                false
                   ? "cursor-default text-[13px] font-[440] leading-5 tracking-[-0.04px] text-v2-text-text-faint"
                   : "text-14-regular text-text-base cursor-default"
               }

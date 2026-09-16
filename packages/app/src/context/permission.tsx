@@ -71,7 +71,6 @@ export const { use: usePermission, provider: PermissionProvider } = createSimple
     })
 
     const activeServer = createMemo(() => {
-      if (params.serverKey && settings.general.newLayoutDesigns()) return requireServerKey(params.serverKey)
       return activeDraft()?.server ?? server.key
     })
 

@@ -37,7 +37,7 @@ export function TerminalPanelV2(props: { stacked?: boolean } = {}) {
   const { workspaceKey, view } = useSessionLayout()
 
   const isDesktop = createMediaQuery("(min-width: 768px)")
-  const newLayout = createMemo(() => settings.general.newLayoutDesigns())
+  const newLayout = createMemo(() => false)
   const opened = createMemo(() => view().terminal.opened())
   const size = createSizing()
   const height = createMemo(() => layout.terminal.height())

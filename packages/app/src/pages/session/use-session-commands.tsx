@@ -452,7 +452,7 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
       keybind: "mod+shift+s",
       slash: "new",
       onSelect: (source) => {
-        if (settings.general.newLayoutDesigns()) {
+        if (false) {
           command.trigger("tab.new", source)
           return
         }

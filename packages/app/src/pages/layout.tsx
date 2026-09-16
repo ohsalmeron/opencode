@@ -1099,9 +1099,7 @@ export default function LegacyLayout(props: ParentProps) {
 
   function openSettings() {
     const run = ++dialogRun
-    const module = settings.general.newLayoutDesigns()
-      ? import("@/components/settings-v2")
-      : import("@/components/dialog-settings")
+    const module = import("@/components/dialog-settings")
     void module.then((x) => {
       if (dialogDead || dialogRun !== run) return
       dialog.show(() => <x.DialogSettings />)
@@ -2246,17 +2244,7 @@ export default function LegacyLayout(props: ParentProps) {
   return (
     <div class="relative bg-background-base flex-1 min-h-0 min-w-0 flex flex-col select-none [&_input]:select-text [&_textarea]:select-text [&_[contenteditable]]:select-text">
       {autoselecting() ?? ""}
-      <Titlebar
-        update={titlebarUpdate}
-        layoutToggle={
-          import.meta.env.DEV
-            ? { 
-                isNewLayout: settings.general.newLayoutDesigns(), 
-                toggle: () => settings.general.setNewLayoutDesigns(!settings.general.newLayoutDesigns()) 
-              }
-            : undefined
-        }
-      />
+      <Titlebar update={titlebarUpdate} layoutToggle={undefined} />
       <Show when={updateVersion() !== undefined}>
         <UpdateAvailableToast version={updateVersion() ?? ""} install={installUpdate} language={language} />
       </Show>

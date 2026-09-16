@@ -214,7 +214,7 @@ export function TerminalPanel() {
       <div class="hidden md:block" onPointerDown={() => size.start()}>
         <ResizeHandle
           classList={{
-            "-top-1": settings.general.newLayoutDesigns(),
+            "-top-1": false,
           }}
           direction="vertical"
           size={pane()}

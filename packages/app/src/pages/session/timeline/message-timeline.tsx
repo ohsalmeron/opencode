@@ -337,7 +337,7 @@ export function MessageTimeline(props: {
     parts: getMsgParts,
     status: sessionStatus,
     showReasoningSummaries: settings.general.showReasoningSummaries,
-    inlineComments: settings.general.newLayoutDesigns,
+    inlineComments: () => false,
   })
   const activeMessageID = projection.activeMessageID
   const assistantMessagesByParent = projection.assistantMessagesByParent
@@ -895,7 +895,7 @@ export function MessageTimeline(props: {
       dialog.close()
     }
 
-    if (settings.general.newLayoutDesigns())
+    if (false)
       return (
         <DialogV2 fit>
           <DialogHeader hideClose>
@@ -1025,7 +1025,7 @@ export function MessageTimeline(props: {
                 message={message()}
                 showAssistantCopyPartID={assistantCopyPartID(row().userMessageID)}
                 turnDurationMs={turnDurationMs(row().userMessageID)}
-                useV2Actions={settings.general.newLayoutDesigns()}
+                useV2Actions={false}
                 defaultOpen={defaultOpen()}
                 toolOpen={toolOpen[part().id] ?? defaultOpen()}
                 onToolOpenChange={(open) => setToolOpen(part().id, open)}
@@ -1088,8 +1088,8 @@ export function MessageTimeline(props: {
                       <div
                         classList={{
                           "shrink-0 max-w-[260px] rounded-[6px] border-border-weak-base bg-background-stronger px-2.5 py-2": true,
-                          "border-[0.5px]": settings.general.newLayoutDesigns(),
-                          border: !settings.general.newLayoutDesigns(),
+                          "border-[0.5px]": false,
+                          border: true,
                         }}
                       >
                         <div class="flex items-center gap-1.5 min-w-0 text-11-medium text-text-strong">
@@ -1124,7 +1124,7 @@ export function MessageTimeline(props: {
           if (m?.role === "user") return m
         })
         const messageComments = createMemo(() => {
-          if (!settings.general.newLayoutDesigns()) return []
+          return []
           return getMsgParts(userMessageRow().userMessageID).flatMap((part) => MessageComment.fromPart(part) ?? [])
         })
         return (
@@ -1137,7 +1137,7 @@ export function MessageTimeline(props: {
                       message={message()}
                       parts={getMsgParts(userMessageRow().userMessageID)}
                       actions={props.actions}
-                      useV2Actions={settings.general.newLayoutDesigns()}
+                      useV2Actions={false}
                       comments={messageComments()}
                     />
                   </div>
@@ -1301,16 +1301,16 @@ export function MessageTimeline(props: {
       <div
         class="absolute left-1/2 -translate-x-1/2 z-[60] pointer-events-none transition-all duration-200 ease-out"
         classList={{
-          "bottom-8": settings.general.newLayoutDesigns(),
-          "bottom-6": !settings.general.newLayoutDesigns(),
+          "bottom-8": false,
+          "bottom-6": !false,
           "opacity-100 translate-y-0 scale-100": props.scroll.overflow && props.scroll.jump,
           "opacity-0 translate-y-2 pointer-events-none": !props.scroll.overflow || !props.scroll.jump,
-          "scale-[0.8]": (!props.scroll.overflow || !props.scroll.jump) && settings.general.newLayoutDesigns(),
-          "scale-95": (!props.scroll.overflow || !props.scroll.jump) && !settings.general.newLayoutDesigns(),
+          
+          
         }}
       >
         <Show
-          when={settings.general.newLayoutDesigns()}
+          when={false}
           fallback={
             <button
               type="button"
@@ -1373,22 +1373,22 @@ export function MessageTimeline(props: {
             classList={{
               "sticky top-0 z-30": true,
               "bg-[linear-gradient(to_bottom,var(--v2-background-bg-base)_48px,transparent)]":
-                settings.general.newLayoutDesigns(),
+                false,
               "bg-[linear-gradient(to_bottom,var(--background-stronger)_48px,transparent)]":
-                !settings.general.newLayoutDesigns(),
+                !false,
               "w-full": true,
               "pb-4": true,
               "pr-3": true,
-              "pl-2.5": settings.general.newLayoutDesigns(),
-              "pl-2 md:pl-4": !settings.general.newLayoutDesigns(),
-              "md:max-w-200 md:mx-auto 2xl:max-w-[1000px]": props.centered && !settings.general.newLayoutDesigns(),
+              "pl-2.5": false,
+              "pl-2 md:pl-4": !false,
+              "md:max-w-200 md:mx-auto 2xl:max-w-[1000px]": props.centered && !false,
             }}
           >
             <div class="h-12 w-full flex items-center justify-between gap-2">
               <div
                 classList={{
                   "flex items-center gap-1 min-w-0 flex-1": true,
-                  "pr-3": !settings.general.newLayoutDesigns(),
+                  "pr-3": !false,
                 }}
               >
                 <div class="flex items-center min-w-0 flex-1 w-full">
@@ -1418,8 +1418,8 @@ export function MessageTimeline(props: {
                           classList={{
                             "truncate text-[13px] font-[530] leading-4 tracking-[-0.04px] text-v2-text-text-base": true,
                             "w-fit rounded-[6px] px-2 py-1 hover:bg-v2-overlay-simple-overlay-hover":
-                              settings.general.newLayoutDesigns(),
-                            "grow-1 min-w-0": !settings.general.newLayoutDesigns(),
+                              false,
+                            "grow-1 min-w-0": !false,
                           }}
                           onClick={openTitleEditor}
                         >
@@ -1436,12 +1436,12 @@ export function MessageTimeline(props: {
                         disabled={titleMutation.isPending}
                         classList={{
                           "block text-[13px] font-[530] leading-4 tracking-[-0.04px] text-v2-text-text-base": true,
-                          "w-full flex-1 grow-1 min-w-0 pl-1 -ml-1 rounded-[6px]": !settings.general.newLayoutDesigns(),
+                          "w-full flex-1 grow-1 min-w-0 pl-1 -ml-1 rounded-[6px]": !false,
                           "field-sizing-content self-start rounded-[6px] px-2 py-1 ":
-                            settings.general.newLayoutDesigns(),
+                            false,
                         }}
                         style={{
-                          "--inline-input-shadow": settings.general.newLayoutDesigns()
+                          "--inline-input-shadow": false
                             ? "none"
                             : "var(--shadow-xs-border-select)",
                         }}
@@ -1470,17 +1470,17 @@ export function MessageTimeline(props: {
                   <div
                     classList={{
                       "shrink-0 flex items-center": true,
-                      "gap-2": settings.general.newLayoutDesigns(),
-                      "gap-3": !settings.general.newLayoutDesigns(),
+                      "gap-2": false,
+                      "gap-3": !false,
                     }}
                   >
                     <SessionContextUsage
                       placement="bottom"
-                      buttonAppearance={settings.general.newLayoutDesigns() ? "v2" : "default"}
+                      buttonAppearance="default"
                     />
                     <Show when={!parentID()}>
                       <Show
-                        when={settings.general.newLayoutDesigns()}
+                        when={false}
                         fallback={
                           <DropdownMenu
                             gutter={4}
@@ -1636,7 +1636,7 @@ export function MessageTimeline(props: {
                         open={share.open}
                         anchorRef={() => more}
                         placement="bottom-end"
-                        gutter={settings.general.newLayoutDesigns() ? 6 : 4}
+                        gutter={4}
                         modal={false}
                         onOpenChange={(open) => {
                           if (open) setShare("dismiss", null)
@@ -1648,7 +1648,7 @@ export function MessageTimeline(props: {
                             data-component="popover-content"
                             classList={{
                               "flex w-80 max-w-none flex-col items-start gap-3 rounded-[10px] border-0 bg-v2-background-bg-layer-01 p-3 shadow-[var(--v2-elevation-floating)]":
-                                settings.general.newLayoutDesigns(),
+                                false,
                             }}
                             style={{ "min-width": "320px" }}
                             onEscapeKeyDown={(event) => {
@@ -1668,7 +1668,7 @@ export function MessageTimeline(props: {
                             }}
                           >
                             <Show
-                              when={settings.general.newLayoutDesigns()}
+                              when={false}
                               fallback={
                                 <div class="flex flex-col p-3">
                                   <div class="flex flex-col gap-1">

@@ -271,7 +271,7 @@ export const Terminal = (props: TerminalProps) => {
     if (!variant?.seeds && !variant?.palette) return fallback
     const resolved = resolveThemeVariant(variant, mode === "dark")
     const text = resolved["text-stronger"] ?? fallback.foreground
-    const background = settings.general.newLayoutDesigns()
+    const background = false
       ? (resolveV2Token(resolveThemeVariantV2(variant, mode === "dark"), "v2-background-bg-base") ??
         fallback.background)
       : (resolved["background-stronger"] ?? fallback.background)

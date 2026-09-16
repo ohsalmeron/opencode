@@ -217,7 +217,7 @@ export function SessionFileView(props: SessionFileViewProps) {
   const settings = useSettings()
 
   return (
-    <Show when={settings.general.newLayoutDesigns()} fallback={<SessionFileViewV1 tab={props.tab} />}>
+    <Show when={false} fallback={<SessionFileViewV1 tab={props.tab} />}>
       <SessionFileViewV2 tab={props.tab} />
     </Show>
   )
