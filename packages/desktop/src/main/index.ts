@@ -25,6 +25,7 @@ import {
   isOldLayoutEligible,
 } from "./onboarding"
 import {
+  checkHealth,
   getDefaultServerUrl,
   preferAppEnv,
   setDefaultServerUrl,
@@ -51,7 +52,7 @@ import { startBackgroundCli } from "./background-cli"
 import { setNativeTranslations } from "./native-translations"
 
 const APP_NAMES: Record<string, string> = {
-  dev: "OpenCode Dev",
+  dev: "OpenCode Classic",
   beta: "OpenCode Beta",
   prod: "OpenCode",
 }
@@ -329,6 +330,21 @@ const main = Effect.gen(function* () {
 
     ensureLoopbackNoProxy()
     useEnvProxy()
+
+    const externalUrl = process.env.OPENCODE_EXTERNAL_SERVER ?? getDefaultServerUrl()
+    if (externalUrl) {
+      logger.log("using external server, skipping sidecar", { url: externalUrl })
+      const healthy = yield* Effect.promise(() => checkHealth(externalUrl))
+      if (!healthy) {
+        yield* Deferred.failSync(
+          serverReady,
+          () => new Error(`External server is not reachable at ${externalUrl}`),
+        )
+        return
+      }
+      yield* Deferred.succeed(serverReady, { url: externalUrl, username: null, password: null })
+      return
+    }
 
     if (SIDECAR_VERSION === "v2") {
       logger.log("spawning v2 sidecar")

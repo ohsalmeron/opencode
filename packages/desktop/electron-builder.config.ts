@@ -42,7 +42,7 @@ const APP_IDS = {
 } as const
 
 const getBase = (appId: string): Configuration => ({
-  artifactName: "opencode-desktop-${os}-${arch}.${ext}",
+  artifactName: "opencode-classic-${os}-${arch}.${ext}",
   directories: {
     output: "dist",
     buildResources: "resources",
@@ -127,7 +127,7 @@ function getConfig() {
       return {
         ...base,
         appId,
-        productName: "OpenCode Dev",
+        productName: "OpenCode Classic",
         deb: { fpm: [metainfoFpm(appId)] },
         rpm: { packageName: "opencode-dev", fpm: [metainfoFpm(appId)] },
       }
